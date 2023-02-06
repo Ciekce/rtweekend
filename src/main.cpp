@@ -5,9 +5,9 @@
 #include <iomanip>
 #include <ctime>
 
-#include <SDL.h>
-
 #include "types.h"
+
+#include "config.h"
 #include "scene.h"
 #include "camera.h"
 #include "render.h"
@@ -20,50 +20,6 @@ using namespace cpurt;
 
 namespace
 {
-	class SdlInitGuard
-	{
-	public:
-		explicit SdlInitGuard(u32 flags = SDL_INIT_EVERYTHING)
-			: m_success{!SDL_Init(flags)} {}
-
-		~SdlInitGuard()
-		{
-			SDL_Quit();
-		}
-
-		inline explicit operator bool() const
-		{
-			return m_success;
-		}
-
-		SdlInitGuard(const SdlInitGuard &) = delete;
-		SdlInitGuard(SdlInitGuard &&) = delete;
-
-	private:
-		bool m_success;
-	};
-
-	class SdlWindow
-	{
-	public:
-		SdlWindow(const std::string &title, i32 x, i32 y, u32 width, u32 height, u32 flags)
-			: m_window{SDL_CreateWindow(title.c_str(), x, y, static_cast<i32>(width), static_cast<i32>(height), flags)}
-		{}
-
-		~SdlWindow()
-		{
-			SDL_DestroyWindow(m_window);
-		}
-
-		inline operator SDL_Window *() // NOLINT
-		{
-			return m_window;
-		}
-
-	private:
-		SDL_Window *m_window;
-	};
-
 	const Sphere &initTestScene(Scene &scene)
 	{
 		const auto ground = scene.createDiffuse({0.8F, 0.8F, 0.0F}).id;
@@ -106,7 +62,7 @@ namespace
 		return centerSphere;
 	}
 
-	void initBigScene(Scene &scene)
+	void initRandomScene(Scene &scene)
 	{
 		Rng rng{0x696969};
 
@@ -146,7 +102,7 @@ namespace
 						.materialId = material
 					});
 				}
-				else std::cout << "skipping sphere" << std::endl;
+			//	else std::cout << "skipping sphere" << std::endl;
 			}
 		}
 
@@ -187,26 +143,11 @@ namespace
 	}
 }
 
-int main(int argc, char *argv[])
+int main()
 {
-	SdlInitGuard sdlInitGuard{SDL_INIT_VIDEO | SDL_INIT_EVENTS};
-
-	if (!sdlInitGuard)
-	{
-		std::cerr << "failed to initialize SDL" << std::endl;
-		return 1;
-	}
-
-	constexpr u32 Width = 1200;
-	constexpr u32 Height = 800;
-
-	SdlWindow window{"traes rey", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, Width, Height, SDL_WINDOW_SHOWN};
-
-	auto *surface = SDL_GetWindowSurface(window);
-
 	Scene scene{};
 //	const auto &sphere = initTestScene(scene);
-	initBigScene(scene);
+	initRandomScene(scene);
 
 	scene.buildBvh();
 
@@ -224,61 +165,12 @@ int main(int argc, char *argv[])
 
 	camera.update();
 
-	{
-		std::vector<u32> buffer{};
-		buffer.resize(Width * Height);
+	std::vector<u32> buffer{};
+	buffer.resize(Width * Height);
 
-		renderer.draw(camera, buffer.data(), Width, Height);
+	renderer.draw(camera, buffer.data(), Width, Height);
 
-		writeToFile(Width, Height, buffer.data());
-
-		SDL_PumpEvents();
-
-		SDL_LockSurface(surface);
-		auto *surfacePixels = static_cast<u32 *>(surface->pixels);
-
-		for (size_t i = 0; i < buffer.size(); ++i)
-		{
-			// renderer outputs rgba, sdl wants bgra
-			surfacePixels[i] = 0xFF000000 | (__builtin_bswap32(buffer[i]) >> 8);
-		}
-
-		SDL_UnlockSurface(surface);
-		SDL_UpdateWindowSurface(window);
-	}
-
-	bool running = true;
-
-	SDL_Event event{};
-	while (running && SDL_WaitEvent(&event))
-	{
-		switch (event.type)
-		{
-		case SDL_QUIT:
-			running = false;
-			break;
-		case SDL_WINDOWEVENT:
-			{
-				switch (event.window.type)
-				{
-				case SDL_WINDOWEVENT_CLOSE:
-					running = false;
-					break;
-				}
-			}
-			break;
-		case SDL_KEYDOWN:
-			{
-				switch (event.key.keysym.sym)
-				{
-				case SDLK_F9:
-					running = false;
-					break;
-				}
-			}
-			break;
-		}
-	}
+	writeToFile(Width, Height, buffer.data());
 
 	return 0;
 }

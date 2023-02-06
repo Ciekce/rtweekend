@@ -131,21 +131,6 @@ namespace cpurt
 			.materialId = data.materialId
 		});
 
-		/*
-		sphere.aabb = {
-			.min = {
-				sphere.pos.x - sphere.radius,
-				sphere.pos.y - sphere.radius,
-				sphere.pos.z - sphere.radius
-			},
-			.max = {
-				sphere.pos.x + sphere.radius,
-				sphere.pos.y + sphere.radius,
-				sphere.pos.z + sphere.radius
-			}
-		};
-		*/
-
 		return sphere;
 	}
 

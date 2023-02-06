@@ -3,6 +3,7 @@
 #include <limits>
 #include <iostream>
 
+#include "config.h"
 #include "ray.h"
 #include "timer.h"
 
@@ -10,16 +11,10 @@ namespace cpurt
 {
 	namespace
 	{
-		constexpr u32 Samples = 500;
-		constexpr u32 Bounces = 50;
-
-		constexpr u32 Threads = 0;
-		constexpr u32 TileSize = 16;
-
 		constexpr auto ScatterEpsilon = 0.000000001F;
 
-		const auto Gamma = glm::vec3{2.2F};
-		const auto InvGamma = 1.0F / Gamma;
+		const auto Gamma3 = glm::vec3{Gamma};
+		const auto InvGamma = 1.0F / Gamma3;
 
 		constexpr bool Tonemap = false;
 		constexpr bool GammaCorrect = true;
